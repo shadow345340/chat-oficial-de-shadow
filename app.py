@@ -6,7 +6,8 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'familia_super_secreta_2025'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'chat.db')
 db = SQLAlchemy(app)
 # Usamos gevent para máxima velocidad
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
@@ -126,3 +127,4 @@ def handle_message(data):
 if __name__ == '__main__':
     with app.app_context(): db.create_all()
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+
