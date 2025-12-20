@@ -7,8 +7,18 @@ import os
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'familia_super_secreta_2025'
 basedir = os.path.abspath(os.path.dirname(__file__))
-# Busca esto y reemplázalo:
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/chat.db'
+
+# Esto detecta si estás en Render o en tu laptop
+if os.environ.get('RENDER'):
+    # En la nube, usamos la carpeta /tmp que siempre tiene permisos
+    db_path = "/tmp/chat.db"
+else:
+    # En tu laptop, se guarda en la carpeta del proyecto
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    db_path = os.path.join(basedir, 'chat.db')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 # Usamos gevent para máxima velocidad
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
@@ -128,5 +138,6 @@ def handle_message(data):
 if __name__ == '__main__':
     with app.app_context(): db.create_all()
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+
 
 
