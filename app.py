@@ -42,6 +42,11 @@ with app.app_context():
 def index():
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
+        # PROTECCIÓN: Si el usuario ya no existe en la DB, cerramos sesión
+        if user is None:
+            session.pop('user_id', None)
+            return redirect(url_for('login'))
+            
         contact_ids = [int(i) for i in user.contacts.split(',') if i]
         contacts = User.query.filter(User.id.in_(contact_ids)).all()
         return render_template('chat.html', user=user, contacts=contacts)
@@ -113,3 +118,4 @@ def handle_message(data):
 if __name__ == '__main__':
     socketio.run(app)
     socketio.run(app)
+
