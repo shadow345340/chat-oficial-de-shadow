@@ -54,7 +54,9 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    db.create_all() # <--- AÑADE ESTA LÍNEA AQUÍ
     if request.method == 'POST':
+        # ... resto del código ...
         user = User.query.filter_by(username=request.form['username']).first()
         if user and user.password == request.form['password']:
             session['user_id'] = user.id
@@ -63,7 +65,9 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    db.create_all() # <--- AÑADE ESTA LÍNEA AQUÍ TAMBIÉN
     if request.method == 'POST':
+        # ... resto del código ...
         # Código de invitación opcional para proteger tu chat
         username = request.form['username']
         password = request.form['password']
@@ -125,3 +129,4 @@ def handle_message(data):
 if __name__ == '__main__':
     socketio.run(app, debug=True)
     socketio.run(app, debug=True)
+
