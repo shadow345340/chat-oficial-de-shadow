@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="blue">
 <head>
-    <meta name="robots" content="noindex, nofollow">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="robots" content="noindex, nofollow">
+    
     <title>Mathias Messenger</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
@@ -13,42 +14,36 @@
         [data-theme="purple"] { --accent: #a855f7; }
         [data-theme="green"] { --accent: #10b981; }
 
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100dvh; overflow: hidden; }
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100dvh; overflow: hidden; }
 
-        /* Sidebar Responsive */
-        .sidebar { 
-            width: 300px; background: var(--side); display: flex; flex-direction: column; 
-            border-right: 1px solid #334155; transition: 0.3s; z-index: 1000;
-        }
+        .sidebar { width: 300px; background: var(--side); display: flex; flex-direction: column; border-right: 1px solid #334155; transition: 0.3s; z-index: 1000; }
         
         @media (max-width: 768px) {
             .sidebar { position: fixed; left: -300px; height: 100%; }
             .sidebar.active { left: 0; }
         }
 
-        .header-side { padding: 20px; background: rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; }
+        .header-side { padding: 20px; background: rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #334155; }
         .contact-list { flex: 1; overflow-y: auto; }
-        .contact-item { padding: 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; }
+        .contact-item { padding: 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #ffffff05; }
         .contact-item:hover { background: rgba(255,255,255,0.05); }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
 
-        /* Main Chat */
-        .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
-        .top-nav { padding: 10px 20px; background: var(--side); display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #334155; }
+        .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; }
+        .top-nav { padding: 10px 20px; background: var(--side); display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #334155; height: 60px; box-sizing: border-box; }
         
         #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .msg { padding: 10px 16px; border-radius: 18px; max-width: 70%; font-size: 15px; line-height: 1.4; }
-        .sent { align-self: flex-end; background: var(--accent); border-bottom-right-radius: 4px; }
+        .msg { padding: 12px 16px; border-radius: 18px; max-width: 75%; font-size: 15px; line-height: 1.4; word-wrap: break-word; }
+        .sent { align-self: flex-end; background: var(--accent); border-bottom-right-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .received { align-self: flex-start; background: #334155; border-bottom-left-radius: 4px; }
 
         .input-area { padding: 15px; background: var(--side); display: flex; gap: 10px; align-items: center; }
-        input { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #475569; background: #0f172a; color: white; outline: none; }
+        .input-area input { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #475569; background: #0f172a; color: white; outline: none; }
         
-        /* Menu Config */
-        #config-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2000; justify-content: center; align-items: center; }
-        .config-box { background: var(--side); padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; }
+        #config-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 2000; justify-content: center; align-items: center; }
+        .config-box { background: var(--side); padding: 30px; border-radius: 20px; width: 85%; max-width: 380px; text-align: center; }
         
-        .menu-btn { background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; }
+        .menu-btn { background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; padding: 5px; }
     </style>
 </head>
 <body>
@@ -56,12 +51,16 @@
     <div class="sidebar" id="sidebar">
         <div class="header-side">
             <div class="avatar">{{ user.username[0]|upper }}</div>
-            <span><b>{{ user.username }}</b></span>
+            <div style="overflow: hidden; text-overflow: ellipsis;"><b>{{ user.username }}</b></div>
         </div>
         <div class="contact-list">
+            <div class="contact-item" onclick="openChat(0, 'Sistema')">
+                <div class="avatar" style="background: #64748b;">S</div>
+                <span>Soporte / Sistema</span>
+            </div>
             {% for c in contacts %}
             <div class="contact-item" onclick="openChat({{ c.id }}, '{{ c.username }}')">
-                <div class="avatar" style="opacity: 0.7;">{{ c.username[0]|upper }}</div>
+                <div class="avatar" style="opacity: 0.8;">{{ c.username[0]|upper }}</div>
                 <span>{{ c.username }}</span>
             </div>
             {% endfor %}
@@ -71,11 +70,15 @@
     <div class="main">
         <div class="top-nav">
             <button class="menu-btn" onclick="toggleSidebar()"><span class="material-icons">menu</span></button>
-            <b id="target-name">Selecciona un chat</b>
+            <b id="target-name">Bienvenido</b>
             <button class="menu-btn" style="margin-left: auto;" onclick="toggleConfig()"><span class="material-icons">settings</span></button>
         </div>
 
-        <div id="chat-window"></div>
+        <div id="chat-window">
+            <div style="text-align: center; color: #64748b; font-size: 13px; margin-top: 20px;">
+                Selecciona un contacto para iniciar una conversación cifrada.
+            </div>
+        </div>
 
         <div class="input-area">
             <span class="material-icons" style="color: #94a3b8; cursor:pointer;">add_circle</span>
@@ -86,15 +89,23 @@
 
     <div id="config-overlay" onclick="toggleConfig()">
         <div class="config-box" onclick="event.stopPropagation()">
-            <h3 style="margin-top:0">Configuración</h3>
-            <label>Tema de Color:</label>
-            <select onchange="document.documentElement.setAttribute('data-theme', this.value)" style="width:100%; padding:8px; margin: 10px 0; border-radius:5px;">
-                <option value="blue">Azul Eléctrico</option>
-                <option value="purple">Violeta Noble</option>
-                <option value="green">Esmeralda</option>
+            <h3 style="margin-top:0; color: var(--accent);">Panel de Control</h3>
+            <hr style="border: 0; border-top: 1px solid #334155; margin: 20px 0;">
+            
+            <label style="display:block; text-align:left; margin-bottom:5px;">Personalizar Tema:</label>
+            <select onchange="document.documentElement.setAttribute('data-theme', this.value)" style="width:100%; padding:12px; background:#0f172a; color:white; border:1px solid #475569; border-radius:10px; margin-bottom:20px;">
+                <option value="blue">Azul Galaxia (Default)</option>
+                <option value="purple">Violeta Neón</option>
+                <option value="green">Verde Esmeralda</option>
             </select>
-            <p style="font-size:14px; color:#94a3b8">Idioma: Español (Predeterminado)</p>
-            <button onclick="location.href='/logout'" style="width:100%; padding:10px; background:#ef4444; border:none; color:white; border-radius:5px; cursor:pointer;">Cerrar Sesión</button>
+
+            <div style="text-align:left; font-size:14px; color:#94a3b8; margin-bottom:25px;">
+                <p><b>Usuario:</b> {{ user.username }}</p>
+                <p><b>Seguridad:</b> Cifrado AES-256 Activado</p>
+                <p><b>Privacidad:</b> Invisible para buscadores</p>
+            </div>
+
+            <button onclick="location.href='/logout'" style="width:100%; padding:12px; background:#ef4444; border:none; color:white; border-radius:10px; font-weight:bold; cursor:pointer;">Cerrar Sesión</button>
         </div>
     </div>
 
@@ -112,13 +123,19 @@
         function openChat(id, name) {
             activeId = id;
             document.getElementById('target-name').innerText = name;
-            if(window.innerWidth < 768) toggleSidebar();
+            if(window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
             document.getElementById('chat-window').innerHTML = '';
             
             fetch('/history/' + id).then(r => r.json()).then(data => {
                 data.forEach(m => {
-                    let dec = CryptoJS.AES.decrypt(m.msg, SECRET).toString(CryptoJS.enc.Utf8);
-                    drawMsg(dec || "[Error]", m.sender_id == {{ user.id }});
+                    try {
+                        let dec = CryptoJS.AES.decrypt(m.msg, SECRET).toString(CryptoJS.enc.Utf8);
+                        drawMsg(dec || "[Mensaje de Sistema]", m.sender_id == {{ user.id }});
+                    } catch(e) {
+                        drawMsg("Contenido Cifrado", m.sender_id == {{ user.id }});
+                    }
                 });
             });
         }
@@ -136,9 +153,8 @@
                 let dec = CryptoJS.AES.decrypt(data.msg, SECRET).toString(CryptoJS.enc.Utf8);
                 drawMsg(dec, data.sender_id == {{ user.id }});
             }
-            // Notificación si no estamos viendo ese chat
             if(data.sender_id != {{ user.id }} && Notification.permission === "granted") {
-                new Notification("Mensaje nuevo en Mathias Chat");
+                new Notification("Mathias Chat: Nuevo mensaje");
             }
         });
 
