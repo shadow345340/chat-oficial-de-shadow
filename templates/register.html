@@ -1,24 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow"> <title>Registro | Mathias Messenger</title>
     <style>
-        body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: #15191c; padding: 40px; border-radius: 15px; border-top: 4px solid #007bff; width: 300px; text-align: center; }
-        input { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #333; background: #2a2e33; color: white; }
-        button { width: 100%; padding: 10px; background: #007bff; border: none; color: white; border-radius: 5px; cursor: pointer; }
-        a { color: #007bff; text-decoration: none; font-size: 14px; }
-        p { color: cornflowerblue;}
+        body { background: #0f172a; color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100dvh; margin: 0; }
+        .card { background: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 320px; text-align: center; border-top: 5px solid #a855f7; }
+        h2 { margin-bottom: 25px; color: #a855f7; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box; outline: none; }
+        button { width: 100%; padding: 12px; background: #a855f7; border: none; color: white; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        a { color: #94a3b8; text-decoration: none; font-size: 14px; display: block; margin-top: 20px; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>Registrate</h2>
+        <h2>Crear Cuenta</h2>
         <form method="POST">
-            <input type="text" name="username" placeholder="Crea un nombre de usuario" required>
-            <input type="password" name="password" placeholder="Crea una contraseña contraseña" required>
-            <button type="submit">Entrar</button>
+            <input type="text" name="username" placeholder="Elige un usuario" required>
+            <input type="password" name="password" placeholder="Crea una contraseña" required>
+            <button type="submit">Registrar y Entrar</button>
         </form>
-        <p>¿Ya tienes cuenta?<a href="/register">Inicia sesion</a></p>
+        <a href="/login">¿Ya tienes cuenta? Inicia sesión</a>
     </div>
 </body>
 </html>
