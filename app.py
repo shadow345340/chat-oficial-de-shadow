@@ -7,11 +7,10 @@ from flask_socketio import SocketIO, emit
 from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'Nexus_Ultra_Secret_2025'
+app.config['SECRET_KEY'] = 'Kratos_Power_2025'
 
-# Base de Datos
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'nexus.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'kratos.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -24,7 +23,7 @@ class User(db.Model):
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, nullable=False) # 0 para Sistema
+    sender_id = db.Column(db.Integer, nullable=False)
     receiver_id = db.Column(db.Integer, nullable=False)
     msg = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -37,7 +36,7 @@ def index():
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
         if not user: return redirect(url_for('logout'))
-        # Solo mostramos usuarios que ya existen (puedes filtrar más adelante)
+        # Solo mostramos usuarios registrados
         contacts = User.query.filter(User.id != user.id).all()
         return render_template('chat.html', user=user, contacts=contacts)
     return redirect(url_for('login'))
@@ -49,23 +48,25 @@ def login():
         if user and user.password == request.form['password']:
             session['user_id'] = user.id
             return redirect(url_for('index'))
-        else:
-            flash('Usuario o contraseña incorrectos', 'error')
+        flash('Credenciales incorrectas. Intenta de nuevo.', 'error')
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
-        if not User.query.filter_by(username=username).first():
+        if User.query.filter_by(username=username).first():
+            flash('Ese usuario ya existe.', 'error')
+        else:
             new_user = User(username=username, password=request.form['password'])
             db.session.add(new_user)
             db.session.commit()
             
-            # MENSAJE DE BIENVENIDA REAL (Cifrado con 'NexusKey')
-            welcome = Message(sender_id=0, receiver_id=new_user.id, 
-                             msg="U2FsdGVkX1+fV6v3iXk5vJ4yvM0yI5F8YpUvj7j9qY=") # "Bienvenido a Nexus"
-            db.session.add(welcome)
+            # EL MENSAJE DE BIENVENIDA QUE PEDISTE
+            # Se envía desde el ID 0 (Sistema) al nuevo usuario
+            welcome_text = "U2FsdGVkX19P6p6rJ6J6rA==iWJ7/I5O9Z9Z9Z9Z" # "¡Bienvenido a Kratos!"
+            welcome_msg = Message(sender_id=0, receiver_id=new_user.id, msg=welcome_text)
+            db.session.add(welcome_msg)
             db.session.commit()
             
             session['user_id'] = new_user.id
@@ -84,14 +85,20 @@ def history(other_id):
         ((Message.sender_id == my_id) & (Message.receiver_id == other_id)) |
         ((Message.sender_id == other_id) & (Message.receiver_id == my_id))
     ).order_by(Message.timestamp.asc()).all()
-    return jsonify([{'msg': m.msg, 'sender_id': m.sender_id, 'hora': m.timestamp.strftime('%H:%M')} for m in msgs])
+    return jsonify([{'msg': m.msg, 'sender_id': m.sender_id} for m in msgs])
 
 @socketio.on('message')
 def handle_message(data):
+    # Guardar en base de datos
     new_msg = Message(sender_id=session['user_id'], receiver_id=data['target_id'], msg=data['msg'])
     db.session.add(new_msg)
     db.session.commit()
-    emit('new_msg', data, broadcast=True)
+    # Enviar a todos (el cliente filtrará si es para él)
+    emit('new_msg', {
+        'msg': data['msg'], 
+        'sender_id': session['user_id'], 
+        'target_id': data['target_id']
+    }, broadcast=True)
 
 if __name__ == '__main__':
     socketio.run(app)
