@@ -1,66 +1,68 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="blue">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="robots" content="noindex, nofollow">
-    
-    <title>Mathias Messenger</title>
+    <title>Velo Messenger</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        :root { --bg: #0f172a; --side: #1e293b; --accent: #3b82f6; --text: #f8fafc; }
-        [data-theme="purple"] { --accent: #a855f7; }
-        [data-theme="green"] { --accent: #10b981; }
+        :root { --bg: #0b0f1a; --side: #161c2d; --accent: #3b82f6; --text: #ffffff; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100dvh; overflow: hidden; }
 
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100dvh; overflow: hidden; }
+        /* Sidebar */
+        .sidebar { width: 320px; background: var(--side); display: flex; flex-direction: column; border-right: 1px solid #2d3748; transition: 0.3s; }
+        .side-header { padding: 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2d3748; }
+        .search-bar { padding: 10px 15px; }
+        .search-bar input { width: 100%; padding: 10px; border-radius: 10px; border: none; background: #0b0f1a; color: white; outline: none; }
+        
+        .contact-list { flex: 1; overflow-y: auto; }
+        .contact-item { padding: 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #2d374833; }
+        .contact-item:hover { background: #1e293b; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; }
 
-        .sidebar { width: 300px; background: var(--side); display: flex; flex-direction: column; border-right: 1px solid #334155; transition: 0.3s; z-index: 1000; }
+        /* Main */
+        .main { flex: 1; display: flex; flex-direction: column; background: #080c14; }
+        .chat-header { padding: 10px 20px; background: var(--side); display: flex; align-items: center; gap: 15px; height: 65px; border-bottom: 1px solid #2d3748; }
         
         @media (max-width: 768px) {
-            .sidebar { position: fixed; left: -300px; height: 100%; }
+            .sidebar { position: fixed; left: -100%; width: 100%; height: 100%; z-index: 100; }
             .sidebar.active { left: 0; }
         }
 
-        .header-side { padding: 20px; background: rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #334155; }
-        .contact-list { flex: 1; overflow-y: auto; }
-        .contact-item { padding: 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #ffffff05; }
-        .contact-item:hover { background: rgba(255,255,255,0.05); }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .bubble { padding: 10px 15px; border-radius: 18px; max-width: 75%; font-size: 15px; position: relative; }
+        .sent { align-self: flex-end; background: var(--accent); border-bottom-right-radius: 2px; }
+        .received { align-self: flex-start; background: #2d3748; border-bottom-left-radius: 2px; }
+        .status { font-size: 16px; vertical-align: bottom; margin-left: 5px; color: #93c5fd; }
 
-        .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; }
-        .top-nav { padding: 10px 20px; background: var(--side); display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #334155; height: 60px; box-sizing: border-box; }
-        
-        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .msg { padding: 12px 16px; border-radius: 18px; max-width: 75%; font-size: 15px; line-height: 1.4; word-wrap: break-word; }
-        .sent { align-self: flex-end; background: var(--accent); border-bottom-right-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .received { align-self: flex-start; background: #334155; border-bottom-left-radius: 4px; }
+        .input-bar { padding: 15px; background: var(--side); display: flex; gap: 10px; align-items: center; }
+        .input-bar input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #2d3748; background: #0b0f1a; color: white; outline: none; }
 
-        .input-area { padding: 15px; background: var(--side); display: flex; gap: 10px; align-items: center; }
-        .input-area input { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #475569; background: #0f172a; color: white; outline: none; }
-        
-        #config-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 2000; justify-content: center; align-items: center; }
-        .config-box { background: var(--side); padding: 30px; border-radius: 20px; width: 85%; max-width: 380px; text-align: center; }
-        
-        .menu-btn { background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; padding: 5px; }
+        /* Menu Overlay */
+        #menu { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 200; }
+        .menu-box { width: 280px; background: var(--side); height: 100%; padding: 20px; }
+        .btn-icon { background: none; border: none; color: white; cursor: pointer; font-size: 24px; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar" id="sidebar">
-        <div class="header-side">
-            <div class="avatar">{{ user.username[0]|upper }}</div>
-            <div style="overflow: hidden; text-overflow: ellipsis;"><b>{{ user.username }}</b></div>
+    <div class="sidebar active" id="sidebar">
+        <div class="side-header">
+            <h2 style="color: var(--accent); margin:0;">Velo</h2>
+            <button class="btn-icon" onclick="toggleMenu()"><span class="material-icons">menu</span></button>
         </div>
+        <div class="search-bar"><input type="text" placeholder="Buscar..." onkeyup="filterUsers(this.value)"></div>
         <div class="contact-list">
-            <div class="contact-item" onclick="openChat(0, 'Sistema')">
-                <div class="avatar" style="background: #64748b;">S</div>
-                <span>Soporte / Sistema</span>
+            <div class="contact-item" onclick="openChat(0, 'Velo Soporte')">
+                <div class="avatar" style="background:#475569">V</div>
+                <span>Velo Soporte</span>
             </div>
             {% for c in contacts %}
             <div class="contact-item" onclick="openChat({{ c.id }}, '{{ c.username }}')">
-                <div class="avatar" style="opacity: 0.8;">{{ c.username[0]|upper }}</div>
+                <div class="avatar">{{ c.username[0]|upper }}</div>
                 <span>{{ c.username }}</span>
             </div>
             {% endfor %}
@@ -68,79 +70,61 @@
     </div>
 
     <div class="main">
-        <div class="top-nav">
-            <button class="menu-btn" onclick="toggleSidebar()"><span class="material-icons">menu</span></button>
-            <b id="target-name">Bienvenido</b>
-            <button class="menu-btn" style="margin-left: auto;" onclick="toggleConfig()"><span class="material-icons">settings</span></button>
-        </div>
-
-        <div id="chat-window">
-            <div style="text-align: center; color: #64748b; font-size: 13px; margin-top: 20px;">
-                Selecciona un contacto para iniciar una conversación cifrada.
+        <div class="chat-header">
+            <button class="btn-icon" id="back" style="display:none" onclick="goBack()"><span class="material-icons">arrow_back</span></button>
+            <b id="chat-title">Selecciona un chat</b>
+            <div style="margin-left:auto; display:flex; gap:15px;">
+                <button class="btn-icon"><span class="material-icons">videocam</span></button>
+                <button class="btn-icon"><span class="material-icons">call</span></button>
             </div>
         </div>
-
-        <div class="input-area">
-            <span class="material-icons" style="color: #94a3b8; cursor:pointer;">add_circle</span>
-            <input type="text" id="msg-input" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter') sendMessage()">
-            <button class="menu-btn" onclick="sendMessage()" style="color: var(--accent);"><span class="material-icons">send</span></button>
+        <div id="chat-window"></div>
+        <div class="input-bar">
+            <button class="btn-icon"><span class="material-icons">mood</span></button>
+            <button class="btn-icon"><span class="material-icons">attach_file</span></button>
+            <input type="text" id="msg-input" placeholder="Mensaje..." onkeypress="if(event.key==='Enter') send()">
+            <button class="btn-icon" id="mic"><span class="material-icons">mic</span></button>
+            <button class="btn-icon" onclick="send()" style="color:var(--accent)"><span class="material-icons">send</span></button>
         </div>
     </div>
 
-    <div id="config-overlay" onclick="toggleConfig()">
-        <div class="config-box" onclick="event.stopPropagation()">
-            <h3 style="margin-top:0; color: var(--accent);">Panel de Control</h3>
-            <hr style="border: 0; border-top: 1px solid #334155; margin: 20px 0;">
-            
-            <label style="display:block; text-align:left; margin-bottom:5px;">Personalizar Tema:</label>
-            <select onchange="document.documentElement.setAttribute('data-theme', this.value)" style="width:100%; padding:12px; background:#0f172a; color:white; border:1px solid #475569; border-radius:10px; margin-bottom:20px;">
-                <option value="blue">Azul Galaxia (Default)</option>
-                <option value="purple">Violeta Neón</option>
-                <option value="green">Verde Esmeralda</option>
-            </select>
-
-            <div style="text-align:left; font-size:14px; color:#94a3b8; margin-bottom:25px;">
-                <p><b>Usuario:</b> {{ user.username }}</p>
-                <p><b>Seguridad:</b> Cifrado AES-256 Activado</p>
-                <p><b>Privacidad:</b> Invisible para buscadores</p>
-            </div>
-
-            <button onclick="location.href='/logout'" style="width:100%; padding:12px; background:#ef4444; border:none; color:white; border-radius:10px; font-weight:bold; cursor:pointer;">Cerrar Sesión</button>
+    <div id="menu" onclick="toggleMenu()">
+        <div class="menu-box" onclick="event.stopPropagation()">
+            <h3>Ajustes</h3>
+            <p><span class="material-icons">person</span> Perfil</p>
+            <p><span class="material-icons">palette</span> Temas</p>
+            <p><span class="material-icons">groups</span> Crear Grupo</p>
+            <hr style="border-color:#2d3748">
+            <p onclick="location.href='/logout'" style="color:#ef4444; cursor:pointer"><span class="material-icons">logout</span> Salir</p>
         </div>
     </div>
 
     <script>
         const socket = io();
         let activeId = null;
-        const SECRET = "Llave_Maestra_Mathias";
+        const SECRET = "Velo_Secret_Pass";
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
-        function toggleConfig() { 
-            let el = document.getElementById('config-overlay');
-            el.style.display = (el.style.display === 'flex') ? 'none' : 'flex';
+        function toggleMenu() { 
+            let m = document.getElementById('menu');
+            m.style.display = (m.style.display === 'block') ? 'none' : 'block';
         }
 
         function openChat(id, name) {
             activeId = id;
-            document.getElementById('target-name').innerText = name;
+            document.getElementById('chat-title').innerText = name;
             if(window.innerWidth < 768) {
                 document.getElementById('sidebar').classList.remove('active');
+                document.getElementById('back').style.display = 'block';
             }
-            document.getElementById('chat-window').innerHTML = '';
-            
-            fetch('/history/' + id).then(r => r.json()).then(data => {
-                data.forEach(m => {
-                    try {
-                        let dec = CryptoJS.AES.decrypt(m.msg, SECRET).toString(CryptoJS.enc.Utf8);
-                        drawMsg(dec || "[Mensaje de Sistema]", m.sender_id == {{ user.id }});
-                    } catch(e) {
-                        drawMsg("Contenido Cifrado", m.sender_id == {{ user.id }});
-                    }
-                });
-            });
+            loadHistory(id);
         }
 
-        function sendMessage() {
+        function goBack() {
+            document.getElementById('sidebar').classList.add('active');
+            document.getElementById('back').style.display = 'none';
+        }
+
+        function send() {
             let inp = document.getElementById('msg-input');
             if(!activeId || !inp.value) return;
             let enc = CryptoJS.AES.encrypt(inp.value, SECRET).toString();
@@ -151,23 +135,35 @@
         socket.on('new_msg', data => {
             if(activeId && (data.sender_id == activeId || data.sender_id == {{ user.id }})) {
                 let dec = CryptoJS.AES.decrypt(data.msg, SECRET).toString(CryptoJS.enc.Utf8);
-                drawMsg(dec, data.sender_id == {{ user.id }});
-            }
-            if(data.sender_id != {{ user.id }} && Notification.permission === "granted") {
-                new Notification("Mathias Chat: Nuevo mensaje");
+                draw(dec, data.sender_id == {{ user.id }}, true);
             }
         });
 
-        function drawMsg(txt, isMe) {
+        function loadHistory(id) {
+            document.getElementById('chat-window').innerHTML = '';
+            fetch('/history/'+id).then(r=>r.json()).then(data=>{
+                data.forEach(m=>{
+                    let dec = CryptoJS.AES.decrypt(m.msg, SECRET).toString(CryptoJS.enc.Utf8);
+                    draw(dec, m.sender_id == {{ user.id }}, m.read);
+                });
+            });
+        }
+
+        function draw(txt, me, read) {
             let win = document.getElementById('chat-window');
-            let d = document.createElement('div');
-            d.className = 'msg ' + (isMe ? 'sent' : 'received');
-            d.innerText = txt;
-            win.appendChild(d);
+            let div = document.createElement('div');
+            div.className = 'bubble ' + (me ? 'sent' : 'received');
+            let ticks = me ? (read ? '<span class="status">done_all</span>' : '<span class="status">done</span>') : '';
+            div.innerHTML = `${txt} <span class="material-icons status">${me ? (read ? 'done_all':'done') : ''}</span>`;
+            win.appendChild(div);
             win.scrollTop = win.scrollHeight;
         }
 
-        if(Notification.permission !== "denied") Notification.requestPermission();
+        function filterUsers(q) {
+            document.querySelectorAll('.contact-item').forEach(i => {
+                i.style.display = i.innerText.toLowerCase().includes(q.toLowerCase()) ? 'flex' : 'none';
+            });
+        }
     </script>
 </body>
 </html>
