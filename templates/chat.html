@@ -4,64 +4,66 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="robots" content="noindex, nofollow">
-    <title>Velo Messenger</title>
+    <title>Nexus Messenger</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        :root { --bg: #0b0f1a; --side: #161c2d; --accent: #3b82f6; --text: #ffffff; }
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100dvh; overflow: hidden; }
-
-        /* Sidebar */
-        .sidebar { width: 320px; background: var(--side); display: flex; flex-direction: column; border-right: 1px solid #2d3748; transition: 0.3s; }
-        .side-header { padding: 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2d3748; }
-        .search-bar { padding: 10px 15px; }
-        .search-bar input { width: 100%; padding: 10px; border-radius: 10px; border: none; background: #0b0f1a; color: white; outline: none; }
+        :root { --bg: #030712; --panel: #111827; --acc: #06b6d4; --txt: #f3f4f6; }
+        body { margin:0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--txt); display: flex; height: 100dvh; }
         
-        .contact-list { flex: 1; overflow-y: auto; }
-        .contact-item { padding: 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #2d374833; }
-        .contact-item:hover { background: #1e293b; }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .sidebar { width: 320px; background: var(--panel); border-right: 1px solid #374151; display: flex; flex-direction: column; transition: 0.3s; z-index: 100; }
+        .sidebar-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #374151; }
+        
+        .search-box { padding: 15px; }
+        .search-box input { width: 100%; padding: 10px; border-radius: 12px; border: 1px solid #374151; background: var(--bg); color: white; outline: none; }
+        
+        .contacts { flex: 1; overflow-y: auto; }
+        .u-item { padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #1f2937; }
+        .u-item:hover { background: #1f2937; }
+        .avatar { width: 45px; height: 45px; border-radius: 15px; background: linear-gradient(45deg, var(--acc), #3b82f6); display: flex; align-items: center; justify-content: center; font-weight: bold; }
 
-        /* Main */
-        .main { flex: 1; display: flex; flex-direction: column; background: #080c14; }
-        .chat-header { padding: 10px 20px; background: var(--side); display: flex; align-items: center; gap: 15px; height: 65px; border-bottom: 1px solid #2d3748; }
+        .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
+        .chat-top { padding: 15px 20px; background: var(--panel); border-bottom: 1px solid #374151; display: flex; align-items: center; gap: 15px; }
         
         @media (max-width: 768px) {
-            .sidebar { position: fixed; left: -100%; width: 100%; height: 100%; z-index: 100; }
+            .sidebar { position: fixed; left: -100%; width: 100%; height: 100%; }
             .sidebar.active { left: 0; }
         }
 
-        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { padding: 10px 15px; border-radius: 18px; max-width: 75%; font-size: 15px; position: relative; }
-        .sent { align-self: flex-end; background: var(--accent); border-bottom-right-radius: 2px; }
-        .received { align-self: flex-start; background: #2d3748; border-bottom-left-radius: 2px; }
-        .status { font-size: 16px; vertical-align: bottom; margin-left: 5px; color: #93c5fd; }
+        #chat-win { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .bubble { padding: 12px 18px; border-radius: 20px; max-width: 75%; font-size: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .sent { align-self: flex-end; background: var(--acc); border-bottom-right-radius: 4px; color: black; font-weight: 500; }
+        .recv { align-self: flex-start; background: #374151; border-bottom-left-radius: 4px; }
 
-        .input-bar { padding: 15px; background: var(--side); display: flex; gap: 10px; align-items: center; }
-        .input-bar input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #2d3748; background: #0b0f1a; color: white; outline: none; }
+        .input-bar { padding: 20px; background: var(--panel); display: flex; gap: 12px; align-items: center; }
+        .input-bar input { flex: 1; padding: 14px; border-radius: 15px; border: 1px solid #374151; background: var(--bg); color: white; outline: none; }
+        
+        .btn { background: none; border: none; color: var(--txt); cursor: pointer; display: flex; align-items: center; transition: 0.2s; }
+        .btn:hover { color: var(--acc); transform: scale(1.1); }
 
-        /* Menu Overlay */
-        #menu { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 200; }
-        .menu-box { width: 280px; background: var(--side); height: 100%; padding: 20px; }
-        .btn-icon { background: none; border: none; color: white; cursor: pointer; font-size: 24px; }
+        /* Menu Desplegable */
+        #nexus-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 200; justify-content: flex-end; }
+        .menu-inner { width: 280px; background: var(--panel); padding: 30px; height: 100%; }
+        .menu-item { display: flex; align-items: center; gap: 15px; padding: 15px; cursor: pointer; border-radius: 10px; margin-bottom: 10px; }
+        .menu-item:hover { background: #1f2937; color: var(--acc); }
     </style>
 </head>
 <body>
 
-    <div class="sidebar active" id="sidebar">
-        <div class="side-header">
-            <h2 style="color: var(--accent); margin:0;">Velo</h2>
-            <button class="btn-icon" onclick="toggleMenu()"><span class="material-icons">menu</span></button>
+    <div class="sidebar active" id="side">
+        <div class="sidebar-header">
+            <h2 style="margin:0; color: var(--acc); letter-spacing: 2px;">NEXUS</h2>
+            <button class="btn" onclick="toggleMenu()"><span class="material-icons">menu</span></button>
         </div>
-        <div class="search-bar"><input type="text" placeholder="Buscar..." onkeyup="filterUsers(this.value)"></div>
-        <div class="contact-list">
-            <div class="contact-item" onclick="openChat(0, 'Velo Soporte')">
-                <div class="avatar" style="background:#475569">V</div>
-                <span>Velo Soporte</span>
+        <div class="search-box"><input type="text" placeholder="Buscar nexus..." onkeyup="filter(this.value)"></div>
+        <div class="contacts">
+            <div class="u-item" onclick="openChat(0, 'Nexus Support')">
+                <div class="avatar" style="background:#4b5563">NS</div>
+                <span>Nexus Support</span>
             </div>
             {% for c in contacts %}
-            <div class="contact-item" onclick="openChat({{ c.id }}, '{{ c.username }}')">
+            <div class="u-item" onclick="openChat({{ c.id }}, '{{ c.username }}')">
                 <div class="avatar">{{ c.username[0]|upper }}</div>
                 <span>{{ c.username }}</span>
             </div>
@@ -70,62 +72,56 @@
     </div>
 
     <div class="main">
-        <div class="chat-header">
-            <button class="btn-icon" id="back" style="display:none" onclick="goBack()"><span class="material-icons">arrow_back</span></button>
-            <b id="chat-title">Selecciona un chat</b>
-            <div style="margin-left:auto; display:flex; gap:15px;">
-                <button class="btn-icon"><span class="material-icons">videocam</span></button>
-                <button class="btn-icon"><span class="material-icons">call</span></button>
-            </div>
+        <div class="chat-top">
+            <button class="btn" id="back" style="display:none" onclick="goBack()"><span class="material-icons">arrow_back</span></button>
+            <b id="c-title">Nexus Chat</b>
         </div>
-        <div id="chat-window"></div>
+        <div id="chat-win"></div>
         <div class="input-bar">
-            <button class="btn-icon"><span class="material-icons">mood</span></button>
-            <button class="btn-icon"><span class="material-icons">attach_file</span></button>
-            <input type="text" id="msg-input" placeholder="Mensaje..." onkeypress="if(event.key==='Enter') send()">
-            <button class="btn-icon" id="mic"><span class="material-icons">mic</span></button>
-            <button class="btn-icon" onclick="send()" style="color:var(--accent)"><span class="material-icons">send</span></button>
+            <button class="btn"><span class="material-icons">add_circle</span></button>
+            <input type="text" id="m-in" placeholder="Escribir mensaje..." onkeypress="if(event.key==='Enter') send()">
+            <button class="btn" onclick="send()" style="color:var(--acc)"><span class="material-icons">send</span></button>
         </div>
     </div>
 
-    <div id="menu" onclick="toggleMenu()">
-        <div class="menu-box" onclick="event.stopPropagation()">
-            <h3>Ajustes</h3>
-            <p><span class="material-icons">person</span> Perfil</p>
-            <p><span class="material-icons">palette</span> Temas</p>
-            <p><span class="material-icons">groups</span> Crear Grupo</p>
-            <hr style="border-color:#2d3748">
-            <p onclick="location.href='/logout'" style="color:#ef4444; cursor:pointer"><span class="material-icons">logout</span> Salir</p>
+    <div id="nexus-menu" onclick="toggleMenu()">
+        <div class="menu-inner" onclick="event.stopPropagation()">
+            <h3 style="color:var(--acc)">Ajustes de Nexus</h3>
+            <div class="menu-item" onclick="alert('Perfil de {{ user.username }}')"><span class="material-icons">account_circle</span> Perfil</div>
+            <div class="menu-item" onclick="alert('Cambiando tema...')"><span class="material-icons">palette</span> Personalización</div>
+            <div class="menu-item" onclick="location.href='/logout'" style="color:#f87171"><span class="material-icons">logout</span> Cerrar Sesión</div>
+            <hr style="border-color:#374151">
+            <button class="btn" onclick="toggleMenu()" style="width:100%; justify-content:center; margin-top:20px;">Cerrar Menú</button>
         </div>
     </div>
 
     <script>
         const socket = io();
         let activeId = null;
-        const SECRET = "Velo_Secret_Pass";
+        const SECRET = "NexusKey";
 
-        function toggleMenu() { 
-            let m = document.getElementById('menu');
-            m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+        function toggleMenu() {
+            let m = document.getElementById('nexus-menu');
+            m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
         }
 
         function openChat(id, name) {
             activeId = id;
-            document.getElementById('chat-title').innerText = name;
+            document.getElementById('c-title').innerText = name;
             if(window.innerWidth < 768) {
-                document.getElementById('sidebar').classList.remove('active');
+                document.getElementById('side').classList.remove('active');
                 document.getElementById('back').style.display = 'block';
             }
-            loadHistory(id);
+            load(id);
         }
 
         function goBack() {
-            document.getElementById('sidebar').classList.add('active');
+            document.getElementById('side').classList.add('active');
             document.getElementById('back').style.display = 'none';
         }
 
         function send() {
-            let inp = document.getElementById('msg-input');
+            let inp = document.getElementById('m-in');
             if(!activeId || !inp.value) return;
             let enc = CryptoJS.AES.encrypt(inp.value, SECRET).toString();
             socket.emit('message', {target_id: activeId, msg: enc});
@@ -135,32 +131,31 @@
         socket.on('new_msg', data => {
             if(activeId && (data.sender_id == activeId || data.sender_id == {{ user.id }})) {
                 let dec = CryptoJS.AES.decrypt(data.msg, SECRET).toString(CryptoJS.enc.Utf8);
-                draw(dec, data.sender_id == {{ user.id }}, true);
+                draw(dec, data.sender_id == {{ user.id }});
             }
         });
 
-        function loadHistory(id) {
-            document.getElementById('chat-window').innerHTML = '';
+        function load(id) {
+            document.getElementById('chat-win').innerHTML = '';
             fetch('/history/'+id).then(r=>r.json()).then(data=>{
                 data.forEach(m=>{
                     let dec = CryptoJS.AES.decrypt(m.msg, SECRET).toString(CryptoJS.enc.Utf8);
-                    draw(dec, m.sender_id == {{ user.id }}, m.read);
+                    draw(dec || "Protegido", m.sender_id == {{ user.id }});
                 });
             });
         }
 
-        function draw(txt, me, read) {
-            let win = document.getElementById('chat-window');
+        function draw(txt, me) {
+            let win = document.getElementById('chat-win');
             let div = document.createElement('div');
             div.className = 'bubble ' + (me ? 'sent' : 'received');
-            let ticks = me ? (read ? '<span class="status">done_all</span>' : '<span class="status">done</span>') : '';
-            div.innerHTML = `${txt} <span class="material-icons status">${me ? (read ? 'done_all':'done') : ''}</span>`;
+            div.innerText = txt;
             win.appendChild(div);
             win.scrollTop = win.scrollHeight;
         }
 
-        function filterUsers(q) {
-            document.querySelectorAll('.contact-item').forEach(i => {
+        function filter(q) {
+            document.querySelectorAll('.u-item').forEach(i => {
                 i.style.display = i.innerText.toLowerCase().includes(q.toLowerCase()) ? 'flex' : 'none';
             });
         }
