@@ -7,10 +7,10 @@ from flask_socketio import SocketIO, emit
 from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'Kratos_Power_2025'
+app.config['SECRET_KEY'] = 'Sphere_Private_2025'
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'kratos.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'sphere.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -20,6 +20,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
+    theme = db.Column(db.String(20), default="sapphire")
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -36,10 +37,15 @@ def index():
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
         if not user: return redirect(url_for('logout'))
-        # Solo mostramos usuarios registrados
         contacts = User.query.filter(User.id != user.id).all()
         return render_template('chat.html', user=user, contacts=contacts)
     return redirect(url_for('login'))
+
+@app.route('/settings')
+def settings():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    user = User.query.get(session['user_id'])
+    return render_template('settings.html', user=user)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -48,7 +54,7 @@ def login():
         if user and user.password == request.form['password']:
             session['user_id'] = user.id
             return redirect(url_for('index'))
-        flash('Credenciales incorrectas. Intenta de nuevo.', 'error')
+        flash('Acceso denegado. Verifica tus datos.', 'error')
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -56,18 +62,19 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         if User.query.filter_by(username=username).first():
-            flash('Ese usuario ya existe.', 'error')
+            flash('Este nombre ya está en uso.', 'error')
         else:
             new_user = User(username=username, password=request.form['password'])
             db.session.add(new_user)
             db.session.commit()
             
-            # EL MENSAJE DE BIENVENIDA QUE PEDISTE
-            # Se envía desde el ID 0 (Sistema) al nuevo usuario
-            welcome_text = "U2FsdGVkX19P6p6rJ6J6rA==iWJ7/I5O9Z9Z9Z9Z" # "¡Bienvenido a Kratos!"
-            welcome_msg = Message(sender_id=0, receiver_id=new_user.id, msg=welcome_text)
-            db.session.add(welcome_msg)
+            # Bienvenida automática cifrada
+            welcome = Message(sender_id=0, receiver_id=new_user.id, msg="U2FsdGVkX19P6p6rJ6J6rA==iWJ7/I5O9Z9Z9Z9Z")
+            db.session.add(welcome)
             db.session.commit()
+            
+            # Avisar a todos que hay un nuevo usuario para actualizar listas
+            socketio.emit('new_user_event', {'id': new_user.id, 'username': new_user.username}, broadcast=True)
             
             session['user_id'] = new_user.id
             return redirect(url_for('index'))
@@ -89,16 +96,10 @@ def history(other_id):
 
 @socketio.on('message')
 def handle_message(data):
-    # Guardar en base de datos
     new_msg = Message(sender_id=session['user_id'], receiver_id=data['target_id'], msg=data['msg'])
     db.session.add(new_msg)
     db.session.commit()
-    # Enviar a todos (el cliente filtrará si es para él)
-    emit('new_msg', {
-        'msg': data['msg'], 
-        'sender_id': session['user_id'], 
-        'target_id': data['target_id']
-    }, broadcast=True)
+    emit('new_msg', {'msg': data['msg'], 'sender_id': session['user_id'], 'target_id': data['target_id']}, broadcast=True)
 
 if __name__ == '__main__':
     socketio.run(app)
