@@ -1,33 +1,24 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Acceso Familia</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0b141a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: #202c33; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 320px; text-align: center; }
-        h2 { color: #00a884; margin-bottom: 25px; }
-        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: #2a3942; color: white; outline: none; font-size: 16px; }
-        button { width: 97%; padding: 12px; background: #00a884; border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; }
-        .error { color: #f15c5c; background: rgba(241, 92, 92, 0.1); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; }
+        body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #15191c; padding: 40px; border-radius: 15px; border-top: 4px solid #007bff; width: 300px; text-align: center; }
+        input { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #333; background: #2a2e33; color: white; }
+        button { width: 100%; padding: 10px; background: #007bff; border: none; color: white; border-radius: 5px; cursor: pointer; }
+        a { color: #007bff; text-decoration: none; font-size: 14px; }
+        p { color: cornflowerblue;}
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>Bienvenido Mathias</h2>
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}<div class="error">{{ message }}</div>{% endfor %}
-            {% endif %}
-        {% endwith %}
-        <form method="post">
+        <h2>Iniciar sesion</h2>
+        <form method="POST">
             <input type="text" name="username" placeholder="Usuario" required>
             <input type="password" name="password" placeholder="Contraseña" required>
             <button type="submit">Entrar</button>
         </form>
-        <p style="margin-top: 20px; font-size: 14px; color: #8696a0;">
-            ¿Nuevo aquí? <a href="/register" style="color: #00a884; text-decoration: none;">Crear cuenta</a>
-        </p>
+        <p>¿Nuevo aqui?<a href="/register">Crea una nueva cuenta</a></p>
     </div>
 </body>
 </html>
