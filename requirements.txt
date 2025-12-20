@@ -31,5 +31,6 @@ flask-sqlalchemy
 flask-socketio
 eventlet
 gunicorn
-cryptojs
+
+
 
