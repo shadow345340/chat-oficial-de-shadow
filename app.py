@@ -42,9 +42,9 @@ with app.app_context():
 def index():
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
-        # PROTECCIÓN: Si el usuario ya no existe en la DB, cerramos sesión
-        if user is None:
-            session.pop('user_id', None)
+        # Si el servidor se reinició y el usuario ya no existe, limpiamos la sesión
+        if not user:
+            session.clear()
             return redirect(url_for('login'))
             
         contact_ids = [int(i) for i in user.contacts.split(',') if i]
@@ -118,4 +118,5 @@ def handle_message(data):
 if __name__ == '__main__':
     socketio.run(app)
     socketio.run(app)
+
 
