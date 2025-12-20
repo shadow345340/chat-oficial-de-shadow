@@ -3,73 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="robots" content="noindex, nofollow">
-    <title>Kratos Messenger</title>
+    <meta name="robots" content="noindex, nofollow"> <title>Sphere Messenger</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        :root { --bg: #0a0a0c; --panel: #141417; --accent: #ff4d4d; --text: #e0e0e0; }
+        :root { --bg: #0f172a; --panel: #1e293b; --acc: #3b82f6; --text: #f8fafc; }
         body { margin:0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100dvh; overflow: hidden; }
         
-        /* Sidebar */
-        .sidebar { width: 320px; background: var(--panel); border-right: 1px solid #222; display: flex; flex-direction: column; transition: 0.3s; z-index: 100; }
-        .sidebar-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
-        .sidebar-header h2 { color: var(--accent); margin:0; letter-spacing: 3px; font-weight: 900; }
+        .sidebar { width: 320px; background: var(--panel); border-right: 1px solid #334155; display: flex; flex-direction: column; transition: 0.3s; flex-shrink: 0; }
+        .sidebar-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+        .sidebar-header h2 { color: var(--acc); margin:0; letter-spacing: 1px; }
         
-        .search { padding: 15px; }
-        .search input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #000; color: white; outline: none; }
+        .search-container { padding: 15px; width: 100%; box-sizing: border-box; } /* CORRECCIÓN BUSCADOR */
+        .search-container input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; outline: none; box-sizing: border-box; }
         
         .contacts { flex: 1; overflow-y: auto; }
-        .u-item { padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #1a1a1a; transition: 0.2s; }
-        .u-item:hover { background: #1a1a1a; }
-        .avatar { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(45deg, var(--accent), #b30000); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
+        .u-item { padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #ffffff05; }
+        .u-item:hover { background: #334155; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: var(--acc); display: flex; align-items: center; justify-content: center; font-weight: bold; }
 
-        /* Main Chat */
-        .main { flex: 1; display: flex; flex-direction: column; background: #000; position: relative; }
-        .chat-header { padding: 15px 20px; background: var(--panel); border-bottom: 1px solid #222; display: flex; align-items: center; gap: 15px; height: 70px; box-sizing: border-box; }
-        
+        .main { flex: 1; display: flex; flex-direction: column; background: #020617; }
+        .chat-top { padding: 10px 20px; background: var(--panel); border-bottom: 1px solid #334155; display: flex; align-items: center; height: 65px; gap: 15px; }
+
         @media (max-width: 768px) {
-            .sidebar { position: fixed; left: -100%; width: 100%; height: 100%; }
+            .sidebar { position: fixed; left: -100%; width: 100%; height: 100%; z-index: 100; }
             .sidebar.active { left: 0; }
         }
 
-        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background-image: radial-gradient(#1a1a1a 1px, transparent 1px); background-size: 20px 20px; }
-        .msg { padding: 12px 18px; border-radius: 15px; max-width: 80%; font-size: 15px; line-height: 1.4; position: relative; }
-        .sent { align-self: flex-end; background: var(--accent); color: white; border-bottom-right-radius: 2px; }
-        .recv { align-self: flex-start; background: #222; border-bottom-left-radius: 2px; }
+        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .msg { padding: 10px 16px; border-radius: 18px; max-width: 75%; font-size: 15px; }
+        .sent { align-self: flex-end; background: var(--acc); color: white; border-bottom-right-radius: 2px; }
+        .recv { align-self: flex-start; background: #334155; border-bottom-left-radius: 2px; }
 
-        .input-bar { padding: 15px 25px; background: var(--panel); display: flex; gap: 15px; align-items: center; }
-        .input-bar input { flex: 1; padding: 14px; border-radius: 10px; border: 1px solid #333; background: #000; color: white; outline: none; }
+        .input-bar { padding: 15px; background: var(--panel); display: flex; gap: 10px; align-items: center; }
+        .input-bar input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #334155; background: #0f172a; color: white; outline: none; }
         
-        .btn { background: none; border: none; color: #888; cursor: pointer; display: flex; align-items: center; transition: 0.3s; }
-        .btn:hover { color: var(--accent); }
+        .btn { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 24px; }
+        .btn:hover { color: var(--acc); }
 
-        /* Menu de Hamburguesa */
-        #h-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 500; }
-        .menu-wrap { width: 300px; background: var(--panel); height: 100%; padding: 40px 20px; box-sizing: border-box; border-right: 2px solid var(--accent); }
-        .menu-opt { display: flex; align-items: center; gap: 20px; padding: 18px; cursor: pointer; border-radius: 8px; font-size: 16px; margin-bottom: 5px; }
-        .menu-opt:hover { background: #1a1a1a; color: var(--accent); }
-        
-        /* Seccion Ajustes */
-        #settings-sec { display: none; margin-top: 20px; padding: 10px; background: #000; border-radius: 10px; }
+        #h-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 200; }
+        .menu-content { width: 280px; background: var(--panel); height: 100%; padding: 30px 20px; }
+        .menu-link { display: flex; align-items: center; gap: 15px; padding: 15px; color: white; text-decoration: none; border-radius: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
     <div class="sidebar active" id="side">
         <div class="sidebar-header">
-            <h2>KRATOS</h2>
-            <button class="btn" onclick="openMenu()"><span class="material-icons">menu</span></button>
+            <h2>Sphere</h2>
+            <button class="btn" onclick="toggleMenu()"><span class="material-icons">menu</span></button>
         </div>
-        <div class="search"><input type="text" placeholder="Buscar guerrero..." onkeyup="filterUsers(this.value)"></div>
-        <div class="contacts">
-            <div class="u-item" onclick="openChat(0, 'Kratos Soporte')">
-                <div class="avatar" style="background:#333">K</div>
-                <span>Kratos Soporte (Sistema)</span>
+        <div class="search-container">
+            <input type="text" placeholder="Buscar contacto..." onkeyup="filter(this.value)">
+        </div>
+        <div class="contacts" id="contact-list">
+            <div class="u-item" onclick="openChat(0, 'Sphere Support')">
+                <div class="avatar" style="background:#64748b">S</div>
+                <span>Sphere Support</span>
             </div>
             {% for c in contacts %}
-            <div class="u-item" onclick="openChat({{ c.id }}, '{{ c.username }}')">
+            <div class="u-item" id="u-{{c.id}}" onclick="openChat({{ c.id }}, '{{ c.username }}')">
                 <div class="avatar">{{ c.username[0]|upper }}</div>
                 <span>{{ c.username }}</span>
             </div>
@@ -78,59 +72,58 @@
     </div>
 
     <div class="main">
-        <div class="chat-header">
+        <div class="chat-top">
             <button class="btn" id="back" style="display:none" onclick="goBack()"><span class="material-icons">arrow_back</span></button>
-            <b id="chat-user">Selecciona un chat</b>
-            <div style="margin-left:auto; display:flex; gap:10px;">
-                <button class="btn"><span class="material-icons">videocam</span></button>
-                <button class="btn"><span class="material-icons">call</span></button>
-            </div>
+            <b id="chat-title">Selecciona un chat</b>
         </div>
         <div id="chat-window"></div>
         <div class="input-bar">
-            <button class="btn"><span class="material-icons">add_photo_alternate</span></button>
-            <input type="text" id="msg-input" placeholder="Escribe tu mensaje..." onkeypress="if(event.key==='Enter') sendMsg()">
-            <button class="btn" onclick="sendMsg()" style="color:var(--accent)"><span class="material-icons">send</span></button>
+            <button class="btn"><span class="material-icons">add_circle</span></button>
+            <input type="text" id="min" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter') send()">
+            <button class="btn" onclick="send()" style="color:var(--acc)"><span class="material-icons">send</span></button>
         </div>
     </div>
 
-    <div id="h-menu" onclick="closeMenu()">
-        <div class="menu-wrap" onclick="event.stopPropagation()">
-            <h3 style="color:var(--accent)">KRATOS MENU</h3>
-            <div class="menu-opt" onclick="toggleSettings()"><span class="material-icons">settings</span> Ajustes</div>
-            <div id="settings-sec">
-                <p style="font-size:12px; color:#666;">ID: {{ user.username }}</p>
-                <label>Idioma:</label>
-                <select style="width:100%; background:#222; color:white; border:none; padding:5px; margin-top:5px;">
-                    <option>Español</option>
-                    <option>English</option>
-                </select>
-            </div>
-            <div class="menu-opt" onclick="alert('Personalización próximamente')"><span class="material-icons">palette</span> Temas</div>
-            <div class="menu-opt" onclick="location.href='/logout'" style="color:var(--accent); margin-top:50px;"><span class="material-icons">logout</span> Cerrar Sesión</div>
+    <div id="h-menu" onclick="toggleMenu()">
+        <div class="menu-content" onclick="event.stopPropagation()">
+            <h3>Opciones</h3>
+            <a href="/settings" class="menu-link"><span class="material-icons">settings</span> Ajustes</a>
+            <div class="menu-link" onclick="alert('Pronto: Grupos')"><span class="material-icons">group_add</span> Crear Grupo</div>
+            <a href="/logout" class="menu-link" style="color:#ef4444"><span class="material-icons">logout</span> Cerrar Sesión</a>
         </div>
     </div>
 
     <script>
         const socket = io();
         let activeId = null;
-        const KEY = "KratosSecurity";
+        const KEY = "SphereSecret";
 
-        function openMenu() { document.getElementById('h-menu').style.display = 'block'; }
-        function closeMenu() { document.getElementById('h-menu').style.display = 'none'; }
-        function toggleSettings() { 
-            let s = document.getElementById('settings-sec');
-            s.style.display = (s.style.display == 'block') ? 'none' : 'block';
+        function toggleMenu() {
+            let m = document.getElementById('h-menu');
+            m.style.display = (m.style.display == 'block') ? 'none' : 'block';
         }
+
+        // ACTUALIZACIÓN EN TIEMPO REAL SIN RECARGAR
+        socket.on('new_user_event', data => {
+            const list = document.getElementById('contact-list');
+            if(!document.getElementById('u-'+data.id)) {
+                const div = document.createElement('div');
+                div.className = 'u-item';
+                div.id = 'u-'+data.id;
+                div.onclick = () => openChat(data.id, data.username);
+                div.innerHTML = `<div class="avatar">${data.username[0].toUpperCase()}</div><span>${data.username}</span>`;
+                list.appendChild(div);
+            }
+        });
 
         function openChat(id, name) {
             activeId = id;
-            document.getElementById('chat-user').innerText = name;
+            document.getElementById('chat-title').innerText = name;
             if(window.innerWidth < 768) {
                 document.getElementById('side').classList.remove('active');
                 document.getElementById('back').style.display = 'block';
             }
-            loadHistory(id);
+            load(id);
         }
 
         function goBack() {
@@ -138,46 +131,42 @@
             document.getElementById('back').style.display = 'none';
         }
 
-        function sendMsg() {
-            const inp = document.getElementById('msg-input');
+        function send() {
+            let inp = document.getElementById('min');
             if(!activeId || !inp.value) return;
-            const encrypted = CryptoJS.AES.encrypt(inp.value, KEY).toString();
-            socket.emit('message', {target_id: activeId, msg: encrypted});
+            let enc = CryptoJS.AES.encrypt(inp.value, KEY).toString();
+            socket.emit('message', {target_id: activeId, msg: enc});
             inp.value = '';
         }
 
         socket.on('new_msg', data => {
             if(activeId && (data.sender_id == activeId || data.sender_id == {{ user.id }})) {
-                try {
-                    const decrypted = CryptoJS.AES.decrypt(data.msg, KEY).toString(CryptoJS.enc.Utf8);
-                    draw(decrypted, data.sender_id == {{ user.id }});
-                } catch(e) {}
+                let dec = CryptoJS.AES.decrypt(data.msg, KEY).toString(CryptoJS.enc.Utf8);
+                draw(dec, data.sender_id == {{ user.id }});
             }
         });
 
-        function loadHistory(id) {
-            const win = document.getElementById('chat-window');
+        function load(id) {
+            let win = document.getElementById('chat-window');
             win.innerHTML = '';
             fetch('/history/'+id).then(r=>r.json()).then(data=>{
                 data.forEach(m=>{
-                    try {
-                        const dec = CryptoJS.AES.decrypt(m.msg, KEY).toString(CryptoJS.enc.Utf8);
-                        draw(dec || "Mensaje Protegido", m.sender_id == {{ user.id }});
-                    } catch(e) {}
+                    let dec = CryptoJS.AES.decrypt(m.msg, KEY).toString(CryptoJS.enc.Utf8);
+                    draw(dec || "Protegido", m.sender_id == {{ user.id }});
                 });
             });
         }
 
         function draw(txt, me) {
-            const win = document.getElementById('chat-window');
-            const d = document.createElement('div');
+            let win = document.getElementById('chat-window');
+            let d = document.createElement('div');
             d.className = 'msg ' + (me ? 'sent' : 'recv');
             d.innerText = txt;
             win.appendChild(d);
             win.scrollTop = win.scrollHeight;
         }
 
-        function filterUsers(q) {
+        function filter(q) {
             document.querySelectorAll('.u-item').forEach(i => {
                 i.style.display = i.innerText.toLowerCase().includes(q.toLowerCase()) ? 'flex' : 'none';
             });
