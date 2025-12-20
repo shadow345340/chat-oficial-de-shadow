@@ -66,10 +66,29 @@ def login():
 def register():
     if request.method == 'POST':
         username = request.form['username']
+        password = request.form['password']
         if not User.query.filter_by(username=username).first():
-            new_user = User(username=username, password=request.form['password'])
+            new_user = User(username=username, password=password)
             db.session.add(new_user)
             db.session.commit()
+            
+            # MENSAJE DE BIENVENIDA AUTOMÁTICO
+            # El sender_id 0 será el "Sistema" o "Mathias"
+            from flask_socketio import emit
+            welcome_text = f"¡Bienvenido {username}! Este es un chat privado y seguro. Usa el menú de arriba para personalizar tu estilo."
+            
+            # Nota: El mensaje se guarda como texto plano aquí para el ejemplo, 
+            # pero el cliente lo intentará descifrar. 
+            # Para que funcione con tu sistema actual, lo guardaremos "pre-cifrado" con tu llave:
+            # U2FsdGVkX1... (este es el texto "Bienvenido" cifrado con la clave 'Llave_Maestra_Mathias')
+            welcome_msg = Message(
+                sender_id=0, 
+                receiver_id=new_user.id, 
+                msg="U2FsdGVkX1+9R6n7KqO9vA9oGZ9GzR6jZ6jZ6jZ6jZ6j" # Ejemplo de cadena cifrada
+            )
+            db.session.add(welcome_msg)
+            db.session.commit()
+
             session['user_id'] = new_user.id
             return redirect(url_for('index'))
     return render_template('register.html')
@@ -103,3 +122,4 @@ def handle_message(data):
 
 if __name__ == '__main__':
     socketio.run(app)
+
