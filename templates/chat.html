@@ -1,144 +1,131 @@
-<!DOCTYPE html>
-<html lang="es">
+
+    
+    <!DOCTYPE html>
+<html lang="es" data-theme="blue">
 <head>
     <meta name="robots" content="noindex, nofollow">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Familiar</title>
-    <script src="{{ url_for('static', filename='socket.io.js') }}"></script>
-    <script src="{{ url_for('static', filename='crypto-js.js') }}"></script>
+    <title>Shadow Messenger</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        :root { 
-            --bg-main: #0b141a; --bg-side: #111b21; --header: #202c33; 
-            --green: #00a884; --my-msg: #005c4b; --other-msg: #202c33; --text: #e9edef;
+        :root {
+            --bg: #0b0e11; --side: #15191c; --accent: #007bff; --text: #ffffff;
         }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-main); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        [data-theme="purple"] { --accent: #8a2be2; }
+        [data-theme="gray"] { --accent: #4a4a4a; }
 
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; }
+        
         /* Sidebar */
-        #sidebar { width: 300px; background: var(--bg-side); border-right: 1px solid #2f3b43; display: flex; flex-direction: column; }
-        .side-header { padding: 10px 15px; background: var(--header); display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-        .search-box { padding: 10px; }
-        .search-box input { width: 90%; padding: 8px; border-radius: 8px; border: none; background: #2a3942; color: white; outline: none; }
-        
-        .contact-list { flex-grow: 1; overflow-y: auto; }
-        .contact { padding: 15px; border-bottom: 1px solid #222d34; cursor: pointer; display: flex; align-items: center; gap: 10px; }
-        .contact:hover { background: #2a3942; }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; background: #53616a; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .sidebar { width: 300px; background: var(--side); border-right: 1px solid #333; display: flex; flex-direction: column; }
+        .header { padding: 20px; background: var(--accent); font-weight: bold; display: flex; justify-content: space-between; }
+        .contact { padding: 15px; border-bottom: 1px solid #222; cursor: pointer; transition: 0.3s; }
+        .contact:hover { background: #2a2e33; }
 
-        /* Chat Window */
-        #chat-window { flex-grow: 1; display: flex; flex-direction: column; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-blend-mode: overlay; background-color: #0b141a; }
-        .chat-header { padding: 15px; background: var(--header); font-weight: bold; }
+        /* Chat Area */
+        .main { flex: 1; display: flex; flex-direction: column; }
+        #chat-window { flex: 1; padding: 20px; overflow-y: auto; background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png'); }
         
-        #messages { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
-        .bubble { max-width: 70%; padding: 8px 12px; border-radius: 8px; font-size: 15px; line-height: 1.4; position: relative; }
-        .me { align-self: flex-end; background: var(--my-msg); border-top-right-radius: 0; }
-        .other { align-self: flex-start; background: var(--other-msg); border-top-left-radius: 0; }
-        .time { font-size: 10px; color: #8696a0; margin-top: 4px; display: block; text-align: right; }
-
-        /* Footer */
-        .footer { padding: 10px; background: var(--header); display: flex; gap: 10px; align-items: center; }
-        #msg { flex-grow: 1; padding: 12px; border-radius: 8px; border: none; background: #2a3942; color: white; outline: none; }
-        .send-btn { background: var(--green); border: none; width: 40px; height: 40px; border-radius: 50%; color: white; cursor: pointer; font-size: 18px; }
+        .msg { margin-bottom: 10px; max-width: 70%; padding: 10px; border-radius: 10px; position: relative; }
+        .sent { background: var(--accent); align-self: flex-end; margin-left: auto; border-bottom-right-radius: 2px; }
+        .received { background: #333; align-self: flex-start; border-bottom-left-radius: 2px; }
+        
+        .input-area { padding: 20px; background: var(--side); display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border-radius: 25px; border: none; background: #2a2e33; color: white; outline: none; }
+        button { background: var(--accent); border: none; padding: 10px 20px; border-radius: 25px; color: white; cursor: pointer; }
+        
+        select { background: transparent; color: white; border: 1px solid white; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div id="sidebar">
-        <div class="side-header">
-            <span>{{ user.username }}</span>
-            <a href="/logout" style="color: #f15c5c; text-decoration: none; font-size: 12px;">Salir</a>
+    <div class="sidebar">
+        <div class="header">
+            Shadow
+            <select onchange="document.documentElement.setAttribute('data-theme', this.value)">
+                <option value="blue">Azul</option>
+                <option value="purple">Violeta</option>
+                <option value="gray">Gris</option>
+            </select>
         </div>
-        <div class="search-box">
-            <input type="text" id="q" placeholder="Buscar familiar..." onkeyup="if(event.key==='Enter') search()">
-            <div id="res" style="margin-top:5px; font-size: 13px;"></div>
+        <div style="padding: 10px;">
+            <input type="text" id="search-input" placeholder="Buscar usuarios..." onkeyup="searchUsers()">
+            <div id="search-results"></div>
         </div>
-        <div class="contact-list">
+        <div id="contacts-list">
             {% for c in contacts %}
-                <div class="contact" onclick="startChat({{ c.id }}, '{{ c.username }}')">
-                    <div class="avatar">{{ c.username[0].upper() }}</div>
-                    <span>{{ c.username }}</span>
-                </div>
+            <div class="contact" onclick="openChat({{ c.id }}, '{{ c.username }}')">{{ c.username }}</div>
             {% endfor %}
         </div>
+        <a href="/logout" style="color: gray; padding: 20px; text-decoration: none; font-size: 12px;">Cerrar Sesión</a>
     </div>
 
-    <div id="chat-window">
-        <div class="chat-header" id="target-name">Selecciona un chat</div>
-        <div id="messages"></div>
-        <div class="footer" id="input-pane" style="display: none;">
-            <input type="text" id="msg" placeholder="Escribe un mensaje..." onkeyup="if(event.key==='Enter') send()">
-            <button class="send-btn" onclick="send()">➤</button>
+    <div class="main">
+        <div id="chat-header" style="padding: 15px; background: var(--side); border-bottom: 1px solid #333;">Selecciona un contacto</div>
+        <div id="chat-window"></div>
+        <div class="input-area">
+            <input type="text" id="msg-input" placeholder="Escribe un mensaje seguro...">
+            <button onclick="sendMessage()">Enviar</button>
         </div>
     </div>
 
     <script>
-        const LLAVE_FAMILIAR = "FamiliaCapote2025_Seguro"; 
-        var socket = io();
-        var targetId = null;
-        var myId = {{ user.id }};
+        const socket = io();
+        let activeId = null;
+        const SECRET = "Llave_Maestra_Shadow_2025";
 
-        function search() {
-            let q = document.getElementById('q').value;
+        function searchUsers() {
+            let q = document.getElementById('search-input').value;
+            if(q.length < 2) return;
             fetch('/search', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query:q})})
             .then(r => r.json()).then(data => {
-                let div = document.getElementById('res');
-                div.innerHTML = data.map(u => `<div style="background:#202c33; padding:5px; margin-bottom:2px; display:flex; justify-content:space-between; align-items:center;">${u.username} <button onclick="add(${u.id})" style="background:var(--green); border:none; color:white; border-radius:3px; cursor:pointer;">+</button></div>`).join('');
+                let html = '';
+                data.forEach(u => html += `<div class="contact" onclick="addContact(${u.id})">+ ${u.username}</div>`);
+                document.getElementById('search-results').innerHTML = html;
             });
         }
 
-        function add(id) {
+        function addContact(id) {
             fetch('/add_contact', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:id})})
             .then(() => location.reload());
         }
 
-        function startChat(id, name) {
-            targetId = id;
-            document.getElementById('target-name').innerText = name;
-            document.getElementById('input-pane').style.display = 'flex';
-            let box = document.getElementById('messages');
-            box.innerHTML = '';
-            
-            fetch('/history/' + id)
-            .then(r => r.json())
-            .then(msgs => {
-                msgs.forEach(m => {
-                    try {
-                        let bytes = CryptoJS.AES.decrypt(m.msg, LLAVE_FAMILIAR);
-                        let descifrado = bytes.toString(CryptoJS.enc.Utf8);
-                        appendMessage(descifrado, m.sender_id, m.hora);
-                    } catch(e) { appendMessage("⚠️ Error cifrado", m.sender_id, m.hora); }
+        function openChat(id, name) {
+            activeId = id;
+            document.getElementById('chat-header').innerText = "Chat con " + name;
+            document.getElementById('chat-window').innerHTML = '';
+            fetch('/history/' + id).then(r => r.json()).then(data => {
+                data.forEach(m => {
+                    let dec = CryptoJS.AES.decrypt(m.msg, SECRET).toString(CryptoJS.enc.Utf8);
+                    displayMsg(dec, m.sender_id == {{ user.id }}, m.hora);
                 });
-                box.scrollTop = box.scrollHeight;
             });
         }
 
-        function send() {
-            let input = document.getElementById('msg');
-            let txt = input.value.trim();
-            if(txt && targetId) {
-                let cifrado = CryptoJS.AES.encrypt(txt, LLAVE_FAMILIAR).toString();
-                socket.emit('message', {msg: cifrado, target_id: targetId});
-                input.value = '';
-            }
+        function sendMessage() {
+            let input = document.getElementById('msg-input');
+            if(!activeId || !input.value) return;
+            let enc = CryptoJS.AES.encrypt(input.value, SECRET).toString();
+            socket.emit('message', {target_id: activeId, msg: enc});
+            input.value = '';
         }
 
-        socket.on('new_msg', function(data) {
-            if ( (data.sender_id == targetId) || (data.sender_id == myId) ) {
-                try {
-                    let bytes = CryptoJS.AES.decrypt(data.msg, LLAVE_FAMILIAR);
-                    let descifrado = bytes.toString(CryptoJS.enc.Utf8);
-                    appendMessage(descifrado, data.sender_id, data.hora);
-                } catch(e) { appendMessage("⚠️ Error cifrado", data.sender_id, data.hora); }
-                let box = document.getElementById('messages');
-                box.scrollTop = box.scrollHeight;
+        socket.on('new_msg', data => {
+            if(activeId) {
+                let dec = CryptoJS.AES.decrypt(data.msg, SECRET).toString(CryptoJS.enc.Utf8);
+                displayMsg(dec, data.sender_id == {{ user.id }}, data.hora);
             }
         });
 
-        function appendMessage(msg, senderId, hora) {
-            let box = document.getElementById('messages');
-            let side = senderId == myId ? 'me' : 'other';
-            box.innerHTML += `<div class="bubble ${side}">${msg}<span class="time">${hora}</span></div>`;
+        function displayMsg(text, isSent, hora) {
+            let win = document.getElementById('chat-window');
+            let div = document.createElement('div');
+            div.className = 'msg ' + (isSent ? 'sent' : 'received');
+            div.innerHTML = `<div>${text}</div><small style="font-size:10px; opacity:0.7">${hora}</small>`;
+            win.appendChild(div);
+            win.scrollTop = win.scrollHeight;
         }
     </script>
 </body>
-
+</html>
 </html>
