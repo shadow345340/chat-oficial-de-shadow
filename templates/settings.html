@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Ajustes | Sphere</title>
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; padding: 20px; }
+        .card { background: #1e293b; padding: 25px; border-radius: 15px; max-width: 400px; margin: auto; }
+        .btn { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 15px; }
+        .back { color: #94a3b8; text-decoration: none; display: block; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <a href="/" class="back">← Volver al chat</a>
+    <div class="card">
+        <h2>Ajustes de Perfil</h2>
+        <p>Usuario: <b>{{ user.username }}</b></p>
+        <hr style="border: 1px solid #334155">
+        <h3>Personalización</h3>
+        <label>Tema del Chat:</label>
+        <select style="width:100%; padding:10px; background:#0f172a; color:white; border:none; border-radius:5px;">
+            <option>Azul Zafiro (Default)</option>
+            <option>Oscuro Total</option>
+            <option>Esmeralda</option>
+        </select>
+        <button class="btn" onclick="alert('Ajustes guardados')">Guardar Cambios</button>
+    </div>
+</body>
+</html>
