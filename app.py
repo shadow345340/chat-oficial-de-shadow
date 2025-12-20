@@ -1,3 +1,4 @@
+
 import eventlet
 eventlet.monkey_patch()
 
@@ -8,8 +9,9 @@ from flask_socketio import SocketIO, emit
 from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Shadow_Secret_2025')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Mathias_Premium_2025')
 
+# Configuración de base de datos
 if os.environ.get('RENDER'):
     db_path = "/tmp/chat.db"
 else:
@@ -22,11 +24,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
+# Modelos
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
-    contacts = db.Column(db.String(500), default="")
+    bio = db.Column(db.String(200), default="¡Hola! Estoy usando el Chat de Mathias.")
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -42,19 +45,16 @@ with app.app_context():
 def index():
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
-        # Si el servidor se reinició y el usuario ya no existe, limpiamos la sesión
         if not user:
             session.clear()
             return redirect(url_for('login'))
-            
-        contact_ids = [int(i) for i in user.contacts.split(',') if i]
-        contacts = User.query.filter(User.id.in_(contact_ids)).all()
-        return render_template('chat.html', user=user, contacts=contacts)
+        # Cargamos a todos los usuarios para que aparezcan en la lista
+        all_users = User.query.filter(User.id != user.id).all()
+        return render_template('chat.html', user=user, contacts=all_users)
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    db.create_all()
     if request.method == 'POST':
         user = User.query.filter_by(username=request.form['username']).first()
         if user and user.password == request.form['password']:
@@ -64,39 +64,20 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    db.create_all()
     if request.method == 'POST':
         username = request.form['username']
-        password = request.form['password']
         if not User.query.filter_by(username=username).first():
-            new_user = User(username=username, password=password)
+            new_user = User(username=username, password=request.form['password'])
             db.session.add(new_user)
             db.session.commit()
-            session['user_id'] = new_user.id # ENTRA DIRECTO
+            session['user_id'] = new_user.id
             return redirect(url_for('index'))
     return render_template('register.html')
 
 @app.route('/logout')
 def logout():
-    session.pop('user_id', None)
+    session.clear()
     return redirect(url_for('login'))
-
-@app.route('/search', methods=['POST'])
-def search():
-    query = request.json.get('query')
-    users = User.query.filter(User.username.like(f'%{query}%')).all()
-    return jsonify([{'id': u.id, 'username': u.username} for u in users if u.id != session.get('user_id')])
-
-@app.route('/add_contact', methods=['POST'])
-def add_contact():
-    target_id = str(request.json.get('id'))
-    user = User.query.get(session['user_id'])
-    current_contacts = user.contacts.split(',')
-    if target_id not in current_contacts:
-        current_contacts.append(target_id)
-        user.contacts = ','.join([c for c in current_contacts if c])
-        db.session.commit()
-    return jsonify({'status': 'ok'})
 
 @app.route('/history/<int:other_id>')
 def history(other_id):
@@ -113,10 +94,12 @@ def handle_message(data):
     new_msg = Message(sender_id=sender_id, receiver_id=data['target_id'], msg=data['msg'])
     db.session.add(new_msg)
     db.session.commit()
-    emit('new_msg', {'msg': data['msg'], 'sender_id': sender_id, 'hora': datetime.now().strftime('%H:%M')}, broadcast=True)
+    emit('new_msg', {
+        'msg': data['msg'], 
+        'sender_id': sender_id, 
+        'receiver_id': data['target_id'],
+        'hora': datetime.now().strftime('%H:%M')
+    }, broadcast=True)
 
 if __name__ == '__main__':
     socketio.run(app)
-    socketio.run(app)
-
-
