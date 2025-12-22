@@ -1,21 +1,18 @@
-import eventlet
-eventlet.monkey_patch()
 import os
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit
-from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'Sphere_2025_Secure'
+app.config['SECRET_KEY'] = 'chat_key_2025'
 
-# Configuración de Base de Datos compatible con Render
+# Base de datos simplificada para evitar errores en Render/GitHub
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'sphere.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'chat.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -24,56 +21,44 @@ class User(db.Model):
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, nullable=False)
-    receiver_id = db.Column(db.Integer, nullable=False)
-    msg = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    sender = db.Column(db.String(80))
+    receiver = db.Column(db.String(80))
+    content = db.Column(db.Text)
 
 with app.app_context():
     db.create_all()
 
 @app.route('/')
 def index():
-    if 'user_id' not in session: return redirect(url_for('login'))
-    user = User.query.get(session['user_id'])
-    if not user: return redirect(url_for('logout'))
-    contacts = User.query.filter(User.id != user.id).all()
-    return render_template('chat.html', user=user, contacts=contacts)
-
-@app.route('/settings')
-def settings():
-    if 'user_id' not in session: return redirect(url_for('login'))
-    user = User.query.get(session['user_id'])
-    return render_template('settings.html', user=user)
+    if 'user' not in session: return redirect(url_for('login'))
+    # Obtenemos todos los usuarios excepto nosotros mismos
+    others = User.query.filter(User.username != session['user']).all()
+    return render_template('chat.html', me=session['user'], users=others)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        user = User.query.filter_by(username=request.form['username']).first()
-        if user and user.password == request.form['password']:
-            session['user_id'] = user.id
+        u = request.form.get('u')
+        p = request.form.get('p')
+        user = User.query.filter_by(username=u, password=p).first()
+        if user:
+            session['user'] = user.username
             return redirect(url_for('index'))
-        flash('Usuario o contraseña no válidos.')
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        if User.query.filter_by(username=username).first():
-            flash('Este usuario ya existe.')
-        else:
-            new_user = User(username=username, password=request.form['password'])
+        u = request.form.get('u')
+        p = request.form.get('p')
+        if not User.query.filter_by(username=u).first():
+            new_user = User(username=u, password=p)
             db.session.add(new_user)
-            db.session.commit()
-            
-            # Bienvenida (Texto plano para evitar errores de cifrado inicial)
-            welcome = Message(sender_id=0, receiver_id=new_user.id, msg="U2FsdGVkX196v3M5Y9z6p7G1O9Z9Z9Z9") 
+            # Mensaje de Bienvenida del Sistema
+            welcome = Message(sender="Sistema", receiver=u, content="¡Bienvenido a tu Chat personal!")
             db.session.add(welcome)
             db.session.commit()
-            
-            socketio.emit('new_user_event', {'id': new_user.id, 'username': new_user.username}, broadcast=True)
-            session['user_id'] = new_user.id
+            session['user'] = u
             return redirect(url_for('index'))
     return render_template('register.html')
 
@@ -82,24 +67,24 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-@app.route('/history/<int:other_id>')
-def history(other_id):
-    my_id = session.get('user_id')
-    if not my_id: return jsonify([])
+@app.route('/get_messages/<other>')
+def get_messages(other):
+    me = session.get('user')
+    if not me: return jsonify([])
     msgs = Message.query.filter(
-        ((Message.sender_id == my_id) & (Message.receiver_id == other_id)) |
-        ((Message.sender_id == other_id) & (Message.receiver_id == my_id))
-    ).order_by(Message.timestamp.asc()).all()
-    return jsonify([{'msg': m.msg, 'sender_id': m.sender_id} for m in msgs])
+        ((Message.sender == me) & (Message.receiver == other)) |
+        ((Message.sender == other) & (Message.receiver == me))
+    ).all()
+    return jsonify([{'s': m.sender, 'c': m.content} for m in msgs])
 
-@socketio.on('message')
-def handle_message(data):
-    my_id = session.get('user_id')
-    if my_id:
-        new_msg = Message(sender_id=my_id, receiver_id=data['target_id'], msg=data['msg'])
-        db.session.add(new_msg)
+@socketio.on('send_msg')
+def handle_msg(data):
+    me = session.get('user')
+    if me:
+        new_m = Message(sender=me, receiver=data['to'], content=data['msg'])
+        db.session.add(new_m)
         db.session.commit()
-        emit('new_msg', {'msg': data['msg'], 'sender_id': my_id, 'target_id': data['target_id']}, broadcast=True)
+        emit('recv_msg', {'from': me, 'to': data['to'], 'msg': data['msg']}, broadcast=True)
 
 if __name__ == '__main__':
     socketio.run(app)
