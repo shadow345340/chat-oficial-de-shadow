@@ -2,26 +2,25 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat | Login</title>
+    <title>Inicio | Shadow</title>
     <style>
-        body { background: #e5ddd5; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: white; padding: 30px; border-radius: 8px; width: 280px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #075e54; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button { background: #00d2ff; color: #000; }
-h2 { color: #00d2ff; }
+        body { background: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: #0a0a0a; padding: 40px; border-radius: 12px; border: 1px solid #1a1a1a; width: 300px; text-align: center; }
+        h2 { color: #00d2ff; margin-bottom: 25px; letter-spacing: 2px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: #00d2ff; }
+        button { width: 100%; padding: 12px; background: #00d2ff; border: none; color: #000; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div class="box">
-        <h2 style="color:#075e54">Chat</h2>
+        <h2>Inicio de sesion</h2>
         <form method="POST">
-            <input type="text" name="u" placeholder="Usuario" required>
+            <input type="text" name="u" placeholder="Nuevo Usuario" required>
             <input type="password" name="p" placeholder="Contraseña" required>
             <button type="submit">Entrar</button>
         </form>
-        <p><a href="/register" style="font-size: 12px; color: #666;">Crear cuenta</a></p>
+        <a href="/login" style="color: #444; font-size: 12px; text-decoration: none; display: block; margin-top: 20px;">No tengo cuenta</a>
     </div>
 </body>
 </html>
-
