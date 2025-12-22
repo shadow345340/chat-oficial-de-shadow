@@ -2,174 +2,78 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="robots" content="noindex, nofollow"> <title>Sphere Messenger</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        :root { --bg: #0f172a; --panel: #1e293b; --acc: #3b82f6; --text: #f8fafc; }
-        body { margin:0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100dvh; overflow: hidden; }
-        
-        .sidebar { width: 320px; background: var(--panel); border-right: 1px solid #334155; display: flex; flex-direction: column; transition: 0.3s; flex-shrink: 0; }
-        .sidebar-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
-        .sidebar-header h2 { color: var(--acc); margin:0; letter-spacing: 1px; }
-        
-        .search-container { padding: 15px; width: 100%; box-sizing: border-box; } /* CORRECCIÓN BUSCADOR */
-        .search-container input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; outline: none; box-sizing: border-box; }
-        
-        .contacts { flex: 1; overflow-y: auto; }
-        .u-item { padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #ffffff05; }
-        .u-item:hover { background: #334155; }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; background: var(--acc); display: flex; align-items: center; justify-content: center; font-weight: bold; }
-
-        .main { flex: 1; display: flex; flex-direction: column; background: #020617; }
-        .chat-top { padding: 10px 20px; background: var(--panel); border-bottom: 1px solid #334155; display: flex; align-items: center; height: 65px; gap: 15px; }
-
-        @media (max-width: 768px) {
-            .sidebar { position: fixed; left: -100%; width: 100%; height: 100%; z-index: 100; }
-            .sidebar.active { left: 0; }
-        }
-
-        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .msg { padding: 10px 16px; border-radius: 18px; max-width: 75%; font-size: 15px; }
-        .sent { align-self: flex-end; background: var(--acc); color: white; border-bottom-right-radius: 2px; }
-        .recv { align-self: flex-start; background: #334155; border-bottom-left-radius: 2px; }
-
-        .input-bar { padding: 15px; background: var(--panel); display: flex; gap: 10px; align-items: center; }
-        .input-bar input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #334155; background: #0f172a; color: white; outline: none; }
-        
-        .btn { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 24px; }
-        .btn:hover { color: var(--acc); }
-
-        #h-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 200; }
-        .menu-content { width: 280px; background: var(--panel); height: 100%; padding: 30px 20px; }
-        .menu-link { display: flex; align-items: center; gap: 15px; padding: 15px; color: white; text-decoration: none; border-radius: 10px; margin-bottom: 10px; }
+        body { margin: 0; font-family: sans-serif; display: flex; height: 100vh; background: #e5ddd5; }
+        .sidebar { width: 300px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        .header-side { padding: 20px; background: #075e54; color: white; }
+        .user-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .user-item:hover { background: #f5f5f5; }
+        .main-chat { flex: 1; display: flex; flex-direction: column; }
+        .chat-header { padding: 15px; background: #ededed; border-bottom: 1px solid #ddd; font-weight: bold; }
+        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 8px 12px; border-radius: 8px; max-width: 70%; font-size: 15px; }
+        .sent { align-self: flex-end; background: #dcf8c6; }
+        .received { align-self: flex-start; background: white; }
+        .input-area { padding: 15px; background: #f0f0f0; display: flex; gap: 10px; }
+        input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
+        button { background: #075e54; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <div class="sidebar active" id="side">
-        <div class="sidebar-header">
-            <h2>Sphere</h2>
-            <button class="btn" onclick="toggleMenu()"><span class="material-icons">menu</span></button>
-        </div>
-        <div class="search-container">
-            <input type="text" placeholder="Buscar contacto..." onkeyup="filter(this.value)">
-        </div>
-        <div class="contacts" id="contact-list">
-            <div class="u-item" onclick="openChat(0, 'Sphere Support')">
-                <div class="avatar" style="background:#64748b">S</div>
-                <span>Sphere Support</span>
-            </div>
-            {% for c in contacts %}
-            <div class="u-item" id="u-{{c.id}}" onclick="openChat({{ c.id }}, '{{ c.username }}')">
-                <div class="avatar">{{ c.username[0]|upper }}</div>
-                <span>{{ c.username }}</span>
-            </div>
-            {% endfor %}
-        </div>
+    <div class="sidebar">
+        <div class="header-side"><b>Chat</b> ({{ me }})</div>
+        <div class="user-item" onclick="selectUser('Sistema')"><b>Sistema</b></div>
+        {% for u in users %}
+        <div class="user-item" onclick="selectUser('{{ u.username }}')">{{ u.username }}</div>
+        {% endfor %}
+        <a href="/logout" style="margin-top:auto; padding:15px; text-align:center; color:red; text-decoration:none;">Cerrar Sesión</a>
     </div>
-
-    <div class="main">
-        <div class="chat-top">
-            <button class="btn" id="back" style="display:none" onclick="goBack()"><span class="material-icons">arrow_back</span></button>
-            <b id="chat-title">Selecciona un chat</b>
-        </div>
+    <div class="main-chat">
+        <div class="chat-header" id="current-user">Selecciona un chat</div>
         <div id="chat-window"></div>
-        <div class="input-bar">
-            <button class="btn"><span class="material-icons">add_circle</span></button>
-            <input type="text" id="min" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter') send()">
-            <button class="btn" onclick="send()" style="color:var(--acc)"><span class="material-icons">send</span></button>
-        </div>
-    </div>
-
-    <div id="h-menu" onclick="toggleMenu()">
-        <div class="menu-content" onclick="event.stopPropagation()">
-            <h3>Opciones</h3>
-            <a href="/settings" class="menu-link"><span class="material-icons">settings</span> Ajustes</a>
-            <div class="menu-link" onclick="alert('Pronto: Grupos')"><span class="material-icons">group_add</span> Crear Grupo</div>
-            <a href="/logout" class="menu-link" style="color:#ef4444"><span class="material-icons">logout</span> Cerrar Sesión</a>
+        <div class="input-area">
+            <input type="text" id="msg-input" placeholder="Escribe aquí...">
+            <button onclick="send()">Enviar</button>
         </div>
     </div>
 
     <script>
         const socket = io();
-        let activeId = null;
-        const KEY = "SphereSecret";
+        let activeUser = "";
+        const me = "{{ me }}";
 
-        function toggleMenu() {
-            let m = document.getElementById('h-menu');
-            m.style.display = (m.style.display == 'block') ? 'none' : 'block';
-        }
-
-        // ACTUALIZACIÓN EN TIEMPO REAL SIN RECARGAR
-        socket.on('new_user_event', data => {
-            const list = document.getElementById('contact-list');
-            if(!document.getElementById('u-'+data.id)) {
-                const div = document.createElement('div');
-                div.className = 'u-item';
-                div.id = 'u-'+data.id;
-                div.onclick = () => openChat(data.id, data.username);
-                div.innerHTML = `<div class="avatar">${data.username[0].toUpperCase()}</div><span>${data.username}</span>`;
-                list.appendChild(div);
-            }
-        });
-
-        function openChat(id, name) {
-            activeId = id;
-            document.getElementById('chat-title').innerText = name;
-            if(window.innerWidth < 768) {
-                document.getElementById('side').classList.remove('active');
-                document.getElementById('back').style.display = 'block';
-            }
-            load(id);
-        }
-
-        function goBack() {
-            document.getElementById('side').classList.add('active');
-            document.getElementById('back').style.display = 'none';
+        function selectUser(name) {
+            activeUser = name;
+            document.getElementById('current-user').innerText = activeUser;
+            document.getElementById('chat-window').innerHTML = "";
+            fetch('/get_messages/' + activeUser).then(r => r.json()).then(data => {
+                data.forEach(m => drawMsg(m.c, m.s === me));
+            });
         }
 
         function send() {
-            let inp = document.getElementById('min');
-            if(!activeId || !inp.value) return;
-            let enc = CryptoJS.AES.encrypt(inp.value, KEY).toString();
-            socket.emit('message', {target_id: activeId, msg: enc});
-            inp.value = '';
+            const input = document.getElementById('msg-input');
+            if (!activeUser || !input.value) return;
+            socket.emit('send_msg', { to: activeUser, msg: input.value });
+            input.value = "";
         }
 
-        socket.on('new_msg', data => {
-            if(activeId && (data.sender_id == activeId || data.sender_id == {{ user.id }})) {
-                let dec = CryptoJS.AES.decrypt(data.msg, KEY).toString(CryptoJS.enc.Utf8);
-                draw(dec, data.sender_id == {{ user.id }});
+        socket.on('recv_msg', d => {
+            if ((d.from === me && d.to === activeUser) || (d.from === activeUser && d.to === me)) {
+                drawMsg(d.msg, d.from === me);
             }
         });
 
-        function load(id) {
-            let win = document.getElementById('chat-window');
-            win.innerHTML = '';
-            fetch('/history/'+id).then(r=>r.json()).then(data=>{
-                data.forEach(m=>{
-                    let dec = CryptoJS.AES.decrypt(m.msg, KEY).toString(CryptoJS.enc.Utf8);
-                    draw(dec || "Protegido", m.sender_id == {{ user.id }});
-                });
-            });
-        }
-
-        function draw(txt, me) {
-            let win = document.getElementById('chat-window');
-            let d = document.createElement('div');
-            d.className = 'msg ' + (me ? 'sent' : 'recv');
-            d.innerText = txt;
-            win.appendChild(d);
+        function drawMsg(txt, isMe) {
+            const win = document.getElementById('chat-window');
+            const div = document.createElement('div');
+            div.className = 'msg ' + (isMe ? 'sent' : 'received');
+            div.innerText = txt;
+            win.appendChild(div);
             win.scrollTop = win.scrollHeight;
-        }
-
-        function filter(q) {
-            document.querySelectorAll('.u-item').forEach(i => {
-                i.style.display = i.innerText.toLowerCase().includes(q.toLowerCase()) ? 'flex' : 'none';
-            });
         }
     </script>
 </body>
