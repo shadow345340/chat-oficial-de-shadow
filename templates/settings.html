@@ -1,30 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>Ajustes | Sphere</title>
+    <title>Configuración | Sphere</title>
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; padding: 20px; }
-        .card { background: #1e293b; padding: 25px; border-radius: 15px; max-width: 400px; margin: auto; }
-        .btn { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 15px; }
-        .back { color: #94a3b8; text-decoration: none; display: block; margin-bottom: 20px; }
+        body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #0f172a; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; border: 1px solid #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h2 { color: #3b82f6; margin-top: 0; }
+        .option-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; margin-bottom: 8px; color: #94a3b8; font-size: 14px; }
+        select, input { width: 100%; padding: 12px; background: #020617; border: 1px solid #334155; color: white; border-radius: 10px; outline: none; box-sizing: border-box; }
+        .btn-save { width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-back { display: block; text-align: center; margin-top: 15px; color: #64748b; text-decoration: none; font-size: 14px; }
     </style>
 </head>
 <body>
-    <a href="/" class="back">← Volver al chat</a>
     <div class="card">
-        <h2>Ajustes de Perfil</h2>
-        <p>Usuario: <b>{{ user.username }}</b></p>
-        <hr style="border: 1px solid #334155">
-        <h3>Personalización</h3>
-        <label>Tema del Chat:</label>
-        <select style="width:100%; padding:10px; background:#0f172a; color:white; border:none; border-radius:5px;">
-            <option>Azul Zafiro (Default)</option>
-            <option>Oscuro Total</option>
-            <option>Esmeralda</option>
-        </select>
-        <button class="btn" onclick="alert('Ajustes guardados')">Guardar Cambios</button>
+        <h2>Ajustes</h2>
+        <div class="option-group">
+            <label>Nombre de Usuario</label>
+            <input type="text" value="{{ user.username }}" disabled>
+        </div>
+        <div class="option-group">
+            <label>Tema Visual</label>
+            <select id="theme-select">
+                <option value="sapphire">Azul Zafiro</option>
+                <option value="emerald">Esmeralda</option>
+                <option value="crimson">Carmesí</option>
+                <option value="midnight">Noche Total</option>
+            </select>
+        </div>
+        <button class="btn-save" onclick="alert('Configuración guardada localmente')">Guardar Cambios</button>
+        <a href="/" class="btn-back">Volver al Chat</a>
     </div>
 </body>
 </html>
