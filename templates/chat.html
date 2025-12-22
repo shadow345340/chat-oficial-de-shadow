@@ -2,63 +2,69 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Shadow</title>
+    <title>Shadow Chat</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        :root { --bg: #050505; --neon: #00d2ff; --panel: #111; --txt: #e0e0e0; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--txt); display: flex; height: 100vh; }
-        .side { width: 280px; background: var(--panel); border-right: 1px solid #222; display: flex; flex-direction: column; }
-        .side h2 { padding: 20px; color: var(--neon); text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #222; margin: 0; }
-        .user { padding: 15px; cursor: pointer; border-bottom: 1px solid #1a1a1a; transition: 0.3s; }
-        .user:hover { background: #1a1a1a; color: var(--neon); }
-        .main { flex: 1; display: flex; flex-direction: column; background: #000; }
-        #win { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 15px; border-radius: 12px; max-width: 75%; line-height: 1.4; }
-        .sent { align-self: flex-end; background: var(--neon); color: #000; font-weight: 500; }
-        .recv { align-self: flex-start; background: #222; color: var(--txt); }
-        .input-bar { padding: 20px; display: flex; gap: 10px; background: var(--panel); }
-        input { flex: 1; background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 8px; outline: none; }
-        input:focus { border-color: var(--neon); }
-        button { background: var(--neon); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn-vault { margin-top: auto; padding: 15px; text-align: center; background: #1a1a1a; color: var(--neon); text-decoration: none; font-size: 13px; }
+        :root { --bg: #000; --neon: #00d2ff; --pnl: #0a0a0a; --txt: #fff; }
+        body { margin:0; font-family: sans-serif; background: var(--bg); color: var(--txt); display: flex; height: 100vh; overflow:hidden; }
+        .side { width: 260px; background: var(--pnl); border-right: 1px solid #1a1a1a; display: flex; flex-direction: column; }
+        .side h2 { padding: 20px; color: var(--neon); margin: 0; font-size: 20px; border-bottom: 1px solid #1a1a1a; }
+        .u { padding: 15px; cursor: pointer; border-bottom: 1px solid #050505; transition: 0.2s; }
+        .u:hover { background: #111; color: var(--neon); }
+        .main { flex: 1; display: flex; flex-direction: column; }
+        #win { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .msg { padding: 10px 14px; border-radius: 12px; max-width: 70%; word-wrap: break-word; }
+        .sent { align-self: flex-end; background: var(--neon); color: #000; }
+        .recv { align-self: flex-start; background: #1a1a1a; color: #fff; }
+        .bar { padding: 15px; background: var(--pnl); display: flex; gap: 10px; align-items: center; border-top: 1px solid #1a1a1a; }
+        input[type="text"] { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 6px; outline: none; }
+        button { background: var(--neon); color: #000; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .chat-img { max-width: 100%; border-radius: 8px; margin-top: 5px; }
     </style>
 </head>
 <body>
     <div class="side">
-        <h2>Shadow</h2>
-        <div class="user" onclick="select('Sistema')"><b>[SISTEMA]</b></div>
+        <h2>SHADOW</h2>
+        <div class="u" onclick="sel('Sistema')">SISTEMA</div>
         {% for u in users %}
-        <div class="user" onclick="select('{{ u.username }}')">{{ u.username }}</div>
+        <div class="u" onclick="sel('{{u.username}}')">{{u.username}}</div>
         {% endfor %}
-        <a href="/vault" class="btn-vault">🔒 MI BÓVEDA</a>
-        <a href="/logout" style="padding: 15px; color: #555; text-decoration: none; font-size: 12px;">Cerrar Sesión</a>
+        <a href="/logout" style="margin-top:auto; padding:20px; color:#444; text-decoration:none; font-size:12px;">Cerrar Sesión</a>
     </div>
     <div class="main">
-        <div style="padding: 15px; border-bottom: 1px solid #222; font-weight: bold; color: var(--neon);" id="cur">Chat</div>
+        <div style="padding:15px; border-bottom:1px solid #1a1a1a; color:var(--neon)" id="target">Selecciona un chat</div>
         <div id="win"></div>
-        <div class="input-bar">
-            <input type="text" id="in" placeholder="Escribir mensaje...">
+        <div class="bar">
+            <input type="file" id="f-in" style="display:none" onchange="up()">
+            <button onclick="document.getElementById('f-in').click()" style="background:#222; color:var(--neon)">📎</button>
+            <input type="text" id="m-in" placeholder="Escribe un mensaje..." onkeypress="if(event.key=='Enter') send()">
             <button onclick="send()">ENVIAR</button>
         </div>
     </div>
     <script>
-        const socket = io();
-        let active = "";
-        const me = "{{ me }}";
-        function select(u) {
-            active = u; document.getElementById('cur').innerText = active; document.getElementById('win').innerHTML = "";
-            fetch('/h/'+u).then(r=>r.json()).then(data=> data.forEach(m=> draw(m.c, m.s==me)));
+        const socket = io(); let active = ""; const me = "{{me}}";
+        function sel(u) {
+            active = u; document.getElementById('target').innerText = u;
+            document.getElementById('win').innerHTML = "";
+            fetch('/h/'+u).then(r=>r.json()).then(data=> data.forEach(m=> draw(m.c, m.s==me, m.img)));
         }
         function send() {
-            let i = document.getElementById('in');
+            let i = document.getElementById('m-in');
             if(!active || !i.value) return;
             socket.emit('send_msg', {to: active, msg: i.value});
             i.value = "";
         }
-        socket.on('recv_msg', d => { if((d.from==me && d.to==active) || (d.from==active && d.to==me)) draw(d.msg, d.from==me); });
-        function draw(t, m) {
+        function up() {
+            let f = document.getElementById('f-in').files[0];
+            let d = new FormData(); d.append('file', f); d.append('target', active);
+            fetch('/upload', {method:'POST', body:d});
+        }
+        socket.on('recv_msg', d => { if((d.from==me && d.to==active) || (d.from==active && d.to==me)) draw(d.msg, d.from==me, d.img); });
+        function draw(c, isMe, isImg) {
             let w = document.getElementById('win'); let d = document.createElement('div');
-            d.className = 'msg ' + (m ? 'sent' : 'recv'); d.innerText = t;
+            d.className = 'msg ' + (isMe ? 'sent' : 'recv');
+            if(isImg) { d.innerHTML = `<img src="/static/uploads/${c}" class="chat-img">`; }
+            else { d.innerText = c; }
             w.appendChild(d); w.scrollTop = w.scrollHeight;
         }
     </script>
